@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - LightSense</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root{--amber:#F5A31A;--panel:#1b1c20;--card:#25262c;--line:#33343c;--muted:#9a9ca6;--ok:#4ade80}
+    *{box-sizing:border-box}
+    body{margin:0;background:#000;color:#fff;font-family:Inter,Arial,sans-serif;min-height:100vh;display:flex;gap:16px;padding:16px}
+    a{color:inherit;text-decoration:none}
+    :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+    svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+    /* sidebar */
+    .side{width:200px;flex:none;display:flex;flex-direction:column;padding:4px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:.95rem;margin:0 0 28px 4px}
+    .brand i{width:32px;height:32px;background:var(--panel);border-radius:9px;display:grid;place-items:center;color:var(--amber)}
+    .nav{display:flex;flex-direction:column;gap:4px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--muted);font-weight:500;font-size:.92rem}
+    .nav a:hover{color:#fff;background:#111}
+    .nav a[aria-current=page]{background:var(--panel);color:var(--amber)}
+    .user{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 4px;font-size:.85rem}
+    .user b{width:32px;height:32px;border-radius:50%;background:var(--amber);color:#000;display:grid;place-items:center;font-size:.8rem; text-transform: uppercase;}
+    .user a{color:var(--muted);margin-left:auto}
+    .user a:hover{color:#fff}
+
+    /* main panel */
+    .main{flex:1;min-width:0;background:var(--panel);border-radius:24px;padding:28px}
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+    h1{margin:0 0 4px;font-size:1.6rem;font-weight:700;letter-spacing:-.02em}
+    .sub{margin:0;color:var(--muted);font-size:.9rem;display:flex;align-items:center;gap:8px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+    select{background:var(--card);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:inherit;font-size:.9rem}
+    h2{margin:0;font-size:1rem;font-weight:600}
+    .grid{display:grid;gap:16px}
+    .stats{grid-template-columns:repeat(4,1fr);margin-bottom:16px}
+    .row{grid-template-columns:2fr 1fr;margin-bottom:16px}
+    .row.two{grid-template-columns:1fr 1fr;margin-bottom:0}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+    .lbl{color:var(--muted);font-size:.82rem;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+    .big{font-size:1.9rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+    .big small{font-size:.9rem;color:var(--muted);font-weight:500;margin-left:4px}
+    .note{color:var(--muted);font-size:.8rem;margin-top:8px}
+    .on{color:var(--amber)}
+    .bar{height:6px;background:var(--line);border-radius:3px;margin-top:12px;overflow:hidden}
+    .bar span{display:block;height:100%;background:var(--amber);border-radius:3px;transition:width .6s}
+    .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+
+    /* controls */
+    .btn{background:var(--amber);color:#000;border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer;margin-top:12px}
+    .btn.off{background:var(--line);color:#fff}
+    .seg{display:flex;background:#17181c;border-radius:10px;padding:4px;gap:4px}
+    .seg button{flex:1;background:none;border:0;color:var(--muted);padding:8px;border-radius:7px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+    .seg button[aria-pressed=true]{background:var(--amber);color:#000}
+    input[type=range]{width:100%;accent-color:var(--amber);margin:8px 0 0}
+    .field{margin-top:20px}
+    .field label{display:flex;justify-content:space-between;font-size:.85rem;font-weight:500}
+    .chart{position:relative;height:230px}
+    .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .mini div{background:#1d1e23;border-radius:10px;padding:12px}
+    .mini span{display:block;color:var(--muted);font-size:.75rem}
+    .mini b{font-size:1.05rem}
+
+    /* lists */
+    ul{list-style:none;margin:0;padding:0}
+    li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:.88rem}
+    li:first-child{border-top:0;padding-top:0}
+    li small,time{color:var(--muted);font-size:.78rem;display:block}
+    time{white-space:nowrap}
+    .sw{position:relative;width:40px;height:22px;flex:none}
+    .sw input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0}
+    .sw i{position:absolute;inset:0;background:var(--line);border-radius:11px;transition:.2s}
+    .sw i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.2s}
+    .sw input:checked+i{background:var(--amber)}
+    .sw input:checked+i::after{left:21px;background:#000}
+    .sw input:focus-visible+i{outline:2px solid #fff;outline-offset:2px}
+
+    @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
+    @media(max-width:800px){
+      body{flex-direction:column;padding:12px}
+      .side{width:auto;flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px}
+      .brand{margin:0}.nav{flex-direction:row;overflow-x:auto;order:3;width:100%}
+      .nav a span{display:none}.user{margin-left:auto;margin-top:0}
+      .main{padding:20px 16px}.row.two{grid-template-columns:1fr}
+    }
+    @media(max-width:520px){.stats{grid-template-columns:1fr}.mini{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+
+  <aside class="side">
+    <div class="brand">
+      <i><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></i>
+      LightSense
+    </div>
+    <nav class="nav" aria-label="Dashboard">
+      <a href="#" aria-current="page"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Overview</span></a>
+      <a href="#energy"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg><span>Energy</span></a>
+      <a href="#schedules"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Schedules</span></a>
+      <a href="#activity"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Activity</span></a>
+    </nav>
+    <div class="user">
+      <b id="userInitial">U</b>
+      <span id="userName">User</span>
+      <a href="login.html" aria-label="Log out" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <h1 id="roomTitle">Living room</h1>
+        <p class="sub"><span class="dot"></span>Sensors online, updating every 2 seconds</p>
+      </div>
+      <label for="room" style="position:absolute;left:-9999px">Choose a room</label>
+      <select id="room"><option>Living room</option><option>Bedroom</option><option>Kitchen</option></select>
+    </div>
+
+    <section class="grid stats" aria-label="Room status">
+      <div class="card">
+        <div class="lbl">Lights</div>
+        <div class="big" id="lightState">Off</div>
+        <button class="btn" id="lightBtn" aria-pressed="false">Turn on</button>
+      </div>
+      <div class="card">
+        <div class="lbl">Presence</div>
+        <div class="big" id="presence">Empty</div>
+        <p class="note" id="lastMove">Last movement: none yet</p>
+      </div>
+      <div class="card">
+        <div class="lbl">Room brightness</div>
+        <div class="big"><span id="lux">0</span><small>lux</small></div>
+        <div class="bar"><span id="luxBar" style="width:0"></span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Power now</div>
+        <div class="big"><span id="watts">0</span><small>W</small></div>
+        <p class="note">Today: <b id="kwhToday">1.84</b> kWh</p>
+      </div>
+    </section>
+
+    <section class="grid row" id="energy">
+      <div class="card">
+        <div class="head"><h2>Power use</h2><span class="note" style="margin:0">Last 40 seconds</span></div>
+        <div class="chart"><canvas id="chart" aria-label="Line chart of power use in watts"></canvas></div>
+        <div class="mini">
+          <div><span>Voltage</span><b id="volt">230 V</b></div>
+          <div><span>Current</span><b id="amps">0.00 A</b></div>
+          <div><span>Energy this month</span><b id="kwhMonth">38.6 kWh</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Light control</h2>
+        <div class="seg" style="margin-top:16px" role="group" aria-label="Control mode">
+          <button id="modeAuto" aria-pressed="true">Automatic</button>
+          <button id="modeManual" aria-pressed="false">Manual</button>
+        </div>
+        <p class="note" id="modeNote">Lights switch on when someone is in the room and it is dark.</p>
+        <div class="field">
+          <label for="threshold">Switch on below <b id="thVal">300 lux</b></label>
+          <input type="range" id="threshold" min="50" max="600" step="10" value="300">
+          <p class="note">Above this brightness, daylight is enough and lights stay off.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid row two">
+      <div class="card" id="schedules">
+        <div class="head"><h2>Schedules</h2></div>
+        <ul id="schedList"></ul>
+      </div>
+      <div class="card" id="activity">
+        <div class="head"><h2>Recent activity</h2></div>
+        <ul id="log"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Handle Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('lightsense_logged_in');
+      localStorage.removeItem('lightsense_user');
+    });
+
+    // Set dynamic user data
+    const currentUser = localStorage.getItem('lightsense_user') || 'User';
+    document.getElementById('userName').textContent = currentUser;
+    document.getElementById('userInitial').textContent = currentUser.charAt(0).toUpperCase();
+
+    const $ = id => document.getElementById(id);
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const clock = () => new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+    const S = {on: false, mode: 'auto', presence: false, lux: 420, th: 300, kwhToday: 1.84, kwhMonth: 38.6};
+    const schedules = [
+      {name: 'Evening lights', when: 'Every day, 6:00 PM to 11:00 PM', on: true},
+      {name: 'Early morning', when: 'Weekdays, 5:30 AM to 7:00 AM', on: true},
+      {name: 'Night off', when: 'Every day, 11:00 PM onward', on: false}
+    ];
+
+    function log(msg) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span></span><time>' + clock() + '</time>';
+      li.firstChild.textContent = msg;
+      $('log').prepend(li);
+      while ($('log').children.length > 6) $('log').lastChild.remove();
+    }
+
+    function setLight(on, why) {
+      if (S.on === on) return;
+      S.on = on;
+      log('Lights turned ' + (on ? 'on' : 'off') + ' (' + why + ')');
+      draw();
+    }
+
+    function decide() {
+      if (S.mode === 'auto') setLight(S.presence && S.lux < S.th, 'automatic');
+    }
+
+    function setMode(m) {
+      S.mode = m;
+      $('modeAuto').setAttribute('aria-pressed', m === 'auto');
+      $('modeManual').setAttribute('aria-pressed', m === 'manual');
+      $('modeNote').textContent = m === 'auto'
+        ? 'Lights switch on when someone is in the room and it is dark.'
+        : 'Automatic switching is paused. Use the Lights button to control the room.';
+      log('Mode changed to ' + (m === 'auto' ? 'automatic' : 'manual'));
+      decide();
+    }
+
+    function draw() {
+      $('lightState').textContent = S.on ? 'On' : 'Off';
+      $('lightState').className = 'big' + (S.on ? ' on' : '');
+      $('lightBtn').textContent = S.on ? 'Turn off' : 'Turn on';
+      $('lightBtn').className = 'btn' + (S.on ? ' off' : '');
+      $('lightBtn').setAttribute('aria-pressed', S.on);
+      $('presence').textContent = S.presence ? 'Someone is here' : 'Empty';
+      $('lux').textContent = Math.round(S.lux);
+      $('luxBar').style.width = Math.min(100, S.lux / 8) + '%';
+    }
+
+    // chart
+    const labels = Array.from({length: 20}, () => '');
+    const points = Array.from({length: 20}, () => 0);
+    const chart = new Chart($('chart'), {
+      type: 'line',
+      data: {labels, datasets: [{data: points, borderColor: '#F5A31A', backgroundColor: 'rgba(245,163,26,.12)', fill: true, tension: .35, pointRadius: 0, borderWidth: 2}]},
+      options: {
+        maintainAspectRatio: false, animation: false,
+        plugins: {legend: {display: false}},
+        scales: {
+          x: {grid: {display: false}, ticks: {color: '#9a9ca6', maxTicksLimit: 5}},
+          y: {beginAtZero: true, suggestedMax: 50, grid: {color: '#33343c'}, ticks: {color: '#9a9ca6', callback: v => v + ' W'}}
+        }
+      }
+    });
+
+    function tick() {
+      S.lux = Math.max(40, Math.min(800, S.lux + rnd(-30, 30)));
+      if (Math.random() < 0.12) {
+        S.presence = !S.presence;
+        if (S.presence) $('lastMove').textContent = 'Last movement: ' + clock();
+        log(S.presence ? 'Movement detected' : 'No movement for a while');
+      }
+      decide();
+
+      const watts = S.on ? rnd(34, 38) : rnd(0.3, 0.5);
+      const volt = rnd(228, 232);
+      S.kwhToday += watts / 1000 * 0.01;
+      S.kwhMonth += watts / 1000 * 0.01;
+
+      $('watts').textContent = watts.toFixed(1);
+      $('volt').textContent = volt.toFixed(0) + ' V';
+      $('amps').textContent = (watts / volt).toFixed(2) + ' A';
+      $('kwhToday').textContent = S.kwhToday.toFixed(2);
+      $('kwhMonth').textContent = S.kwhMonth.toFixed(1) + ' kWh';
+
+      points.push(+watts.toFixed(1)); points.shift();
+      labels.push(clock()); labels.shift();
+      chart.update('none');
+      draw();
+    }
+
+    // events
+    $('lightBtn').addEventListener('click', () => {
+      if (S.mode === 'auto') setMode('manual');
+      setLight(!S.on, 'manual');
+    });
+    $('modeAuto').addEventListener('click', () => setMode('auto'));
+    $('modeManual').addEventListener('click', () => setMode('manual'));
+    $('threshold').addEventListener('input', e => {
+      S.th = +e.target.value;
+      $('thVal').textContent = S.th + ' lux';
+      decide();
+    });
+    $('room').addEventListener('change', e => {
+      $('roomTitle').textContent = e.target.value;
+      log('Now viewing ' + e.target.value);
+    });
+
+    schedules.forEach((s, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<div><b></b><small></small></div><label class="sw"><input type="checkbox"><i></i></label>';
+      li.querySelector('b').textContent = s.name;
+      li.querySelector('small').textContent = s.when;
+      const box = li.querySelector('input');
+      box.checked = s.on;
+      box.setAttribute('aria-label', s.name);
+      box.addEventListener('change', () => log(s.name + (box.checked ? ' schedule enabled' : ' schedule paused')));
+      $('schedList').appendChild(li);
+    });
+
+    log('Dashboard connected');
+    draw();
+    tick();
+    setInterval(tick, 2000);
+  </script>
+</body>
+</html>
